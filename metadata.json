@@ -1,0 +1,6 @@
+{
+  "name": "AuditCIR-CII - Diagnostic & Éligibilité R&D Innovation",
+  "description": "Plateforme professionnelle d'aide à l'analyse et à la qualification de l'éligibilité des projets au Crédit Impôt Recherche (CIR) et Crédit Impôt Innovation (CII).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
