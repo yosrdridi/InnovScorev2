@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { Company, Project } from '../../types';
-import { Building2, Plus, Users, Calendar, AlertCircle, CheckCircle, Briefcase, FileSpreadsheet } from 'lucide-react';
+import { 
+  Building2, 
+  Plus, 
+  Users, 
+  Calendar, 
+  AlertCircle, 
+  CheckCircle, 
+  Briefcase, 
+  FileSpreadsheet,
+  MoreVertical,
+  Trash2
+} from 'lucide-react';
 
 interface CompaniesViewProps {
   companies: Company[];
@@ -9,6 +20,7 @@ interface CompaniesViewProps {
   setSelectedCompanyId: (id: string) => void;
   onAddCompany: (company: Company) => void;
   onUpdateCompany: (company: Company) => void;
+  onRequestDeleteCompany?: (company: Company) => void;
 }
 
 export const CompaniesView: React.FC<CompaniesViewProps> = ({
@@ -17,10 +29,12 @@ export const CompaniesView: React.FC<CompaniesViewProps> = ({
   selectedCompanyId,
   setSelectedCompanyId,
   onAddCompany,
-  onUpdateCompany
+  onUpdateCompany,
+  onRequestDeleteCompany
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [openMenuCompanyId, setOpenMenuCompanyId] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<Partial<Company>>({
@@ -114,7 +128,28 @@ export const CompaniesView: React.FC<CompaniesViewProps> = ({
 
       {/* Companies List */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {companies.map((company) => {
+        {companies.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-lg p-12 text-center max-w-lg mx-auto space-y-4 shadow-xs col-span-full">
+            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Aucune entreprise enregistrée</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Toutes les entreprises ont été supprimées. Créez une entreprise déclarante pour pouvoir instruire vos projets.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenAdd}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md shadow-xs transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Créer une entreprise</span>
+            </button>
+          </div>
+        ) : (
+          companies.map((company) => {
           const compProjects = projects.filter(p => p.companyId === company.id);
           const isSelected = company.id === selectedCompanyId;
           const pmeStatus = isPme(company.size);
@@ -216,11 +251,58 @@ export const CompaniesView: React.FC<CompaniesViewProps> = ({
                   >
                     {isSelected ? 'Sélectionnée' : 'Sélectionner'}
                   </button>
+
+                  {onRequestDeleteCompany && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuCompanyId(openMenuCompanyId === company.id ? null : company.id);
+                        }}
+                        className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                        aria-label="Actions pour cette entreprise"
+                        title="Actions"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {openMenuCompanyId === company.id && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-0 bottom-full mb-1 w-48 bg-white border border-slate-200 rounded-md shadow-md py-1 z-30 text-xs"
+                        >
+                          <button
+                            onClick={() => {
+                              setOpenMenuCompanyId(null);
+                              handleOpenEdit(company);
+                            }}
+                            className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center gap-2"
+                          >
+                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Modifier l'entreprise</span>
+                          </button>
+                          <div className="my-1 border-t border-slate-100"></div>
+                          <button
+                            onClick={() => {
+                              setOpenMenuCompanyId(null);
+                              onRequestDeleteCompany(company);
+                            }}
+                            className="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-600 flex items-center gap-2 font-medium transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                            <span>Supprimer l’entreprise</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           );
-        })}
+        })
+      )}
       </div>
 
       {/* Legal Explanatory Note on PME and CII */}

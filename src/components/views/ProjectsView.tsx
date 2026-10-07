@@ -26,7 +26,8 @@ import {
   Atom,
   Factory,
   Sun,
-  HeartPulse
+  HeartPulse,
+  MoreVertical
 } from 'lucide-react';
 import { ActiveTab } from '../layout/Sidebar';
 
@@ -38,6 +39,7 @@ interface ProjectsViewProps {
   onUpdateProject: (project: Project) => void;
   onNewProjectClick: () => void;
   setActiveTab: (tab: ActiveTab) => void;
+  onRequestDeleteProject?: (project: Project) => void;
 }
 
 export const ProjectsView: React.FC<ProjectsViewProps> = ({
@@ -47,13 +49,15 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   setSelectedProjectId,
   onUpdateProject,
   onNewProjectClick,
-  setActiveTab
+  setActiveTab,
+  onRequestDeleteProject
 }) => {
   const currentProject = projects.find(p => p.id === selectedProjectId) || projects[0];
   const [activeSubTab, setActiveSubTab] = useState<'identification' | 'qualification' | 'equipe'>('identification');
   const [searchTerm, setSearchTerm] = useState('');
   const [companyFilter, setCompanyFilter] = useState('ALL');
   const [isSavedMessage, setIsSavedMessage] = useState(false);
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [newDisciplineInput, setNewDisciplineInput] = useState('');
   const [ignoredSuggestions, setIgnoredSuggestions] = useState<string[]>([]);
 
@@ -78,10 +82,12 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     setTimeout(() => setIsSavedMessage(false), 2500);
   };
 
-  const currentDomainProfile = getDomainProfile(formProject.primaryDomain || 'software');
+  const currentDomainProfile = getDomainProfile(formProject?.primaryDomain || 'software');
 
   // AI Domain and Secondary Discipline Detection
-  const aiDetection = detectProjectDomain(formProject);
+  const aiDetection = formProject 
+    ? detectProjectDomain(formProject) 
+    : { detectedKeywords: [], secondaryDomains: [], confidence: 0, suggestedAddition: undefined };
   const suggestedDiscipline = aiDetection.suggestedAddition && !ignoredSuggestions.includes(aiDetection.suggestedAddition)
     ? aiDetection.suggestedAddition
     : null;
@@ -159,6 +165,30 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     return matchesSearch && matchesCompany;
   });
 
+  if (!formProject || projects.length === 0) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-lg p-12 text-center max-w-lg mx-auto mt-12 space-y-4 shadow-xs">
+        <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+          <FolderKanban className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-slate-900">Aucun projet enregistré</h3>
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            Tous les projets ont été supprimés ou aucun n’a encore été créé.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onNewProjectClick}
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md shadow-xs transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Créer un nouveau projet</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Top Selector & Controls */}
@@ -211,6 +241,39 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             <Plus className="w-3.5 h-3.5" />
             <span>Nouveau projet</span>
           </button>
+
+          {onRequestDeleteProject && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsActionMenuOpen(prev => !prev)}
+                className="p-1.5 rounded-md border border-slate-300 hover:bg-slate-100 text-slate-600 transition-colors"
+                title="Options du projet"
+                aria-label="Options du projet"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {isActionMenuOpen && (
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-md shadow-lg py-1 z-30 text-xs animate-in fade-in"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsActionMenuOpen(false);
+                      onRequestDeleteProject(formProject);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 font-medium transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                    <span>Supprimer le projet</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

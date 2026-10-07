@@ -15,7 +15,8 @@ import {
   BookOpen,
   X,
   FileText,
-  Paperclip
+  Paperclip,
+  Trash2
 } from 'lucide-react';
 import { ActiveTab } from '../layout/Sidebar';
 
@@ -26,6 +27,7 @@ interface DashboardViewProps {
   setSelectedProjectId: (id: string) => void;
   setActiveTab: (tab: ActiveTab) => void;
   onNewProjectClick: () => void;
+  onRequestDeleteProject?: (project: Project) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -34,7 +36,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   selectedProjectId,
   setSelectedProjectId,
   setActiveTab,
-  onNewProjectClick
+  onNewProjectClick,
+  onRequestDeleteProject
 }) => {
   const [isMethodologyModalOpen, setIsMethodologyModalOpen] = useState(false);
   const [openMenuProjectId, setOpenMenuProjectId] = useState<string | null>(null);
@@ -266,7 +269,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="space-y-3">
-            {projectSyntheses.map(({ project, company, synthesis }) => {
+            {projectSyntheses.length === 0 ? (
+              <div className="bg-white border border-slate-200/90 rounded-lg p-8 text-center text-xs text-slate-500 space-y-3">
+                <FolderKanban className="w-8 h-8 mx-auto text-slate-300" />
+                <p className="font-semibold text-slate-700">Aucun projet dans le portefeuille</p>
+                <p className="text-[11px] text-slate-400">Ajoutez une entreprise et un projet pour démarrer l'instruction CIR / CII.</p>
+                <button
+                  type="button"
+                  onClick={onNewProjectClick}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md shadow-xs transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nouveau projet</span>
+                </button>
+              </div>
+            ) : (
+              projectSyntheses.map(({ project, company, synthesis }) => {
               const isSelected = project.id === selectedProjectId;
               const domain = getDomainProfile(project.primaryDomain);
               const isMenuOpen = openMenuProjectId === project.id;
@@ -372,6 +390,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                               <FileText className="w-3.5 h-3.5 text-slate-400" />
                               <span>Export du rapport</span>
                             </button>
+                            {onRequestDeleteProject && (
+                              <>
+                                <div className="my-1 border-t border-slate-100"></div>
+                                <button
+                                  onClick={() => {
+                                    setOpenMenuProjectId(null);
+                                    onRequestDeleteProject(project);
+                                  }}
+                                  className="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-600 flex items-center gap-2 font-medium transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                  <span>Supprimer le projet</span>
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -445,7 +478,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </div>
                 </div>
               );
-            })}
+            })
+          )}
           </div>
         </div>
 
