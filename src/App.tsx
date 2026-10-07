@@ -29,6 +29,7 @@ export default function App() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>(INITIAL_PROJECTS[0].id);
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Active Company & Project
   const currentCompany = companies.find(c => c.id === selectedCompanyId) || companies[0];
@@ -86,6 +87,8 @@ export default function App() {
         setActiveTab={setActiveTab}
         unresolvedMissingCount={unresolvedMissingCount}
         criticalAlertCount={criticalAlertCount}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* Main Content Area */}
@@ -101,10 +104,11 @@ export default function App() {
           activeTab={activeTab}
           currentSynthesis={currentSynthesis}
           onNewProjectClick={() => setIsNewProjectModalOpen(true)}
+          onToggleMobileMenu={() => setIsMobileSidebarOpen(prev => !prev)}
         />
 
         {/* Viewport Content */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {activeTab === 'dashboard' && (
               <DashboardView

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Company, Project, AuditSynthesis } from '../../types';
-import { ChevronRight, PlusCircle, Building, FolderKanban, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Plus, Menu } from 'lucide-react';
 import { ActiveTab } from './Sidebar';
 
 interface HeaderProps {
@@ -13,6 +13,7 @@ interface HeaderProps {
   activeTab: ActiveTab;
   currentSynthesis?: AuditSynthesis;
   onNewProjectClick: () => void;
+  onToggleMobileMenu?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,123 +23,124 @@ export const Header: React.FC<HeaderProps> = ({
   selectedProjectId,
   setSelectedCompanyId,
   setSelectedProjectId,
-  activeTab,
   currentSynthesis,
-  onNewProjectClick
+  onNewProjectClick,
+  onToggleMobileMenu
 }) => {
   const currentCompany = companies.find(c => c.id === selectedCompanyId) || companies[0];
   const companyProjects = projects.filter(p => p.companyId === currentCompany?.id);
   const currentProject = projects.find(p => p.id === selectedProjectId) || companyProjects[0] || projects[0];
 
-  const getTabLabel = (tab: ActiveTab) => {
-    switch (tab) {
-      case 'dashboard': return 'Tableau de bord';
-      case 'companies': return 'Gestion des entreprises';
-      case 'projects': return 'Dossier de qualification projet';
-      case 'cir': return 'Grille d’analyse CIR & Critères Frascati';
-      case 'cii': return 'Grille d’analyse CII (Crédit Impôt Innovation)';
-      case 'matrix': return 'Matrice décisionnelle CIR / CII / Ingénierie';
-      case 'missing': return 'Informations requises pour sécuriser l’audit';
-      case 'questions': return 'Questions d’approfondissement intelligentes';
-      case 'evidences': return 'Registre des pièces justificatives';
-      case 'synthesis': return 'Synthèse stratégique & Recommandations';
-      case 'export': return 'Export du rapport d’audit';
-      default: return '';
+  const getConfidenceLabel = (conf?: string) => {
+    switch (conf) {
+      case 'ELEVEE': return 'Confiance élevée';
+      case 'MOYENNE': return 'Confiance moyenne';
+      case 'FAIBLE': return 'Confiance faible';
+      default: return 'Confiance à évaluer';
     }
   };
 
-  const getPotentialBadge = (potential?: string) => {
-    switch (potential) {
-      case 'FORT':
-        return <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-emerald-200">Fort</span>;
-      case 'MODERE':
-        return <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-blue-200">Modéré</span>;
-      case 'A_APPROFONDIR':
-        return <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-amber-200">À approfondir</span>;
-      case 'FAIBLE':
-        return <span className="text-orange-700 bg-orange-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-orange-200">Faible</span>;
+  const getConfidenceClasses = (conf?: string) => {
+    switch (conf) {
+      case 'ELEVEE':
+        return 'text-emerald-700 bg-emerald-50 border-emerald-200/70';
+      case 'MOYENNE':
+        return 'text-blue-700 bg-blue-50 border-blue-200/70';
       default:
-        return <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[11px] font-semibold border border-slate-200">Très faible</span>;
+        return 'text-amber-700 bg-amber-50 border-amber-200/70';
     }
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 no-print">
-      {/* Left Breadcrumb & Context */}
+    <header className="h-14 bg-white border-b border-slate-200/90 px-4 lg:px-6 flex items-center justify-between shrink-0 no-print">
+      {/* Left: Hamburger (mobile) + "Entreprise > Projet" */}
       <div className="flex items-center gap-3 min-w-0">
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span className="flex items-center gap-1 font-medium text-slate-700">
-            <Building className="w-3.5 h-3.5 text-slate-400" />
-            <select
-              value={currentCompany?.id || ''}
-              onChange={(e) => {
-                const newCompId = e.target.value;
-                setSelectedCompanyId(newCompId);
-                const firstProj = projects.find(p => p.companyId === newCompId);
-                if (firstProj) setSelectedProjectId(firstProj.id);
-              }}
-              className="bg-transparent font-semibold text-slate-800 hover:text-blue-600 focus:outline-hidden cursor-pointer"
-            >
-              {companies.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </span>
+        {onToggleMobileMenu && (
+          <button
+            onClick={onToggleMobileMenu}
+            className="lg:hidden text-slate-500 hover:text-slate-800 p-1 rounded-md"
+            aria-label="Ouvrir le menu de navigation"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
 
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+        <div className="flex items-center gap-1.5 text-xs text-slate-600 truncate">
+          {/* Entreprise selector */}
+          <select
+            value={currentCompany?.id || ''}
+            onChange={(e) => {
+              const newCompId = e.target.value;
+              setSelectedCompanyId(newCompId);
+              const firstProj = projects.find(p => p.companyId === newCompId);
+              if (firstProj) setSelectedProjectId(firstProj.id);
+            }}
+            className="bg-transparent font-medium text-slate-600 hover:text-slate-900 focus:outline-hidden cursor-pointer max-w-[160px] sm:max-w-[220px] truncate"
+            title="Sélectionner l'entreprise"
+          >
+            {companies.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
 
-          <span className="flex items-center gap-1 font-medium text-slate-700 max-w-[240px] truncate">
-            <FolderKanban className="w-3.5 h-3.5 text-slate-400" />
-            <select
-              value={currentProject?.id || ''}
-              onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="bg-transparent font-medium text-slate-800 hover:text-blue-600 focus:outline-hidden cursor-pointer max-w-[200px] truncate"
-            >
-              {companyProjects.length > 0 ? (
-                companyProjects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))
-              ) : (
-                <option disabled>Aucun projet</option>
-              )}
-            </select>
-          </span>
+          <span className="text-slate-300 font-light select-none px-0.5">&gt;</span>
 
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-
-          <span className="text-slate-600 font-medium">
-            {getTabLabel(activeTab)}
-          </span>
+          {/* Projet selector */}
+          <select
+            value={currentProject?.id || ''}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            className="bg-transparent font-semibold text-slate-900 hover:text-blue-600 focus:outline-hidden cursor-pointer max-w-[180px] sm:max-w-[260px] truncate"
+            title="Sélectionner le projet actif"
+          >
+            {companyProjects.length > 0 ? (
+              companyProjects.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))
+            ) : (
+              <option disabled>Aucun projet</option>
+            )}
+          </select>
         </div>
       </div>
 
-      {/* Right Quick Status & Actions */}
-      <div className="flex items-center gap-4 shrink-0">
+      {/* Right: Badges sobres (CIR, CII, Confiance) + Bouton Nouveau projet */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {currentSynthesis && currentProject && (
-          <div className="hidden lg:flex items-center gap-3 text-xs text-slate-500 border-r border-slate-200 pr-4">
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500 text-[11px]">Score CIR :</span>
-              <span className="font-bold text-blue-700 tabular-nums">{currentSynthesis.cirScoreTotal.toFixed(1)}/5</span>
-              {getPotentialBadge(currentSynthesis.cirPotential)}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* CIR Badge */}
+            <div 
+              title={`Potentiel CIR : ${currentSynthesis.cirPotential}`}
+              className="px-2 sm:px-2.5 py-1 rounded-md bg-slate-50 text-slate-800 border border-slate-200/80 text-[11px] font-medium tabular-nums flex items-center gap-1"
+            >
+              <span className="text-slate-500 font-normal">CIR</span>
+              <strong className="text-blue-700 font-bold">{currentSynthesis.cirScoreTotal.toFixed(1)}</strong>
+              <span className="text-slate-400 font-normal text-[10px]">/ 5</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500 text-[11px]">Score CII :</span>
-              <span className="font-bold text-purple-700 tabular-nums">{currentSynthesis.ciiScoreTotal.toFixed(1)}/5</span>
-              {getPotentialBadge(currentSynthesis.ciiPotential)}
+
+            {/* CII Badge */}
+            <div 
+              title={`Potentiel CII : ${currentSynthesis.ciiPotential}`}
+              className="px-2 sm:px-2.5 py-1 rounded-md bg-slate-50 text-slate-800 border border-slate-200/80 text-[11px] font-medium tabular-nums flex items-center gap-1"
+            >
+              <span className="text-slate-500 font-normal">CII</span>
+              <strong className="text-purple-700 font-bold">{currentSynthesis.ciiScoreTotal.toFixed(1)}</strong>
+              <span className="text-slate-400 font-normal text-[10px]">/ 5</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500 text-[11px]">Confiance :</span>
-              <span className="text-slate-700 font-medium">{currentSynthesis.confidence}</span>
+
+            {/* Confiance Badge (hidden on mobile if screen too narrow) */}
+            <div className={`hidden md:inline-flex px-2 sm:px-2.5 py-1 rounded-md border text-[11px] font-medium ${getConfidenceClasses(currentSynthesis.confidence)}`}>
+              {getConfidenceLabel(currentSynthesis.confidence)}
             </div>
           </div>
         )}
 
         <button
           onClick={onNewProjectClick}
-          className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-md transition-colors shadow-xs"
+          className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors shadow-xs shrink-0"
         >
-          <PlusCircle className="w-3.5 h-3.5" />
-          <span>Nouveau projet</span>
+          <Plus className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Nouveau projet</span>
+          <span className="sm:hidden">Nouveau</span>
         </button>
       </div>
     </header>
